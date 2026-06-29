@@ -146,7 +146,7 @@
 
   .campos-linha{
     display:grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     gap:12px;
   }
   @media (max-width: 900px){ .campos-linha{ grid-template-columns: repeat(2, 1fr); } }
@@ -246,6 +246,10 @@
           <label>ADS / Marketing (%)</label>
           <input type="number" id="sim-ads" placeholder="0" step="0.1" oninput="calcularTabelaShopee()">
         </div>
+        <div class="field">
+          <label>Taxa de Transação (%)</label>
+          <input type="number" id="sim-transacao" placeholder="2" step="0.1" value="2" oninput="calcularTabelaShopee()">
+        </div>
       </div>
 
       <div style="margin-top:6px;">
@@ -273,6 +277,7 @@
           <div class="result-row"><span>Preço de venda</span><b id="m-preco">R$ 0,00</b></div>
           <div class="result-row"><span>(-) Comissão <span id="m-com-label" style="color:var(--muted); font-size:11px;"></span></span><b id="m-comissao" style="color:var(--danger);">- R$ 0,00</b></div>
           <div class="result-row"><span>(-) Tarifa fixa</span><b id="m-tarifa" style="color:var(--danger);">- R$ 0,00</b></div>
+          <div class="result-row" id="m-row-transacao"><span>(-) Taxa de Transação</span><b id="m-transacao" style="color:var(--danger);">- R$ 0,00</b></div>
           <div class="result-row"><span>(-) Custo + Embalagem + Outros</span><b id="m-custos" style="color:var(--danger);">- R$ 0,00</b></div>
           <div class="result-row" id="m-row-imposto"><span>(-) Imposto</span><b id="m-imposto" style="color:var(--danger);">- R$ 0,00</b></div>
           <div class="result-row" id="m-row-ads"><span>(-) ADS</span><b id="m-ads" style="color:var(--danger);">- R$ 0,00</b></div>
@@ -437,14 +442,16 @@
     const outros = parseFloat(document.getElementById('sim-outros').value) || 0;
     const impostoPct = parseFloat(document.getElementById('sim-imposto').value) || 0;
     const adsPct = parseFloat(document.getElementById('sim-ads').value) || 0;
+    const transacaoPct = parseFloat(document.getElementById('sim-transacao').value) || 0;
 
     const { comissaoPct, tarifaFixa } = taxaShopee2026(preco);
     const valorComissao = preco * (comissaoPct/100);
     const valorImposto = preco * (impostoPct/100);
     const valorAds = preco * (adsPct/100);
+    const valorTransacao = preco * (transacaoPct/100);
     const custosBase = custo + embalagem + outros;
 
-    const lucro = preco - valorComissao - tarifaFixa - custosBase - valorImposto - valorAds;
+    const lucro = preco - valorComissao - tarifaFixa - custosBase - valorImposto - valorAds - valorTransacao;
     const margemPct = preco > 0 ? (lucro/preco)*100 : 0;
 
     document.getElementById('m-preco').textContent = formatarMoeda(preco);
@@ -452,6 +459,10 @@
     document.getElementById('m-comissao').textContent = '- ' + formatarMoeda(valorComissao);
     document.getElementById('m-tarifa').textContent = '- ' + formatarMoeda(tarifaFixa);
     document.getElementById('m-custos').textContent = '- ' + formatarMoeda(custosBase);
+
+    const rowTransacao = document.getElementById('m-row-transacao');
+    if(transacaoPct > 0){ rowTransacao.style.display=''; document.getElementById('m-transacao').textContent = '- ' + formatarMoeda(valorTransacao); }
+    else { rowTransacao.style.display = 'none'; }
 
     const rowImp = document.getElementById('m-row-imposto');
     if(impostoPct > 0){ rowImp.style.display=''; document.getElementById('m-imposto').textContent = '- ' + formatarMoeda(valorImposto); }
@@ -474,7 +485,7 @@
     ultimoCalculo = {
       nome_produto: document.getElementById('sim-produto').value.trim() || 'Produto sem nome',
       custo, frete: 0,
-      embalagem, outros_custos: outros, ads_pct: adsPct,
+      embalagem, outros_custos: outros, ads_pct: adsPct, transacao_pct: transacaoPct,
       taxa_plataforma_pct: comissaoPct,
       imposto_pct: impostoPct,
       margem_desejada_pct: round2(margemPct),
@@ -510,12 +521,12 @@
 
   // Encontra o preço de venda necessário para atingir uma margem específica,
   // já considerando que a comissão da Shopee muda de faixa conforme o preço sobe
-  function precoParaMargem(margemAlvoPct, custoBase, impostoPct, adsPct){
+  function precoParaMargem(margemAlvoPct, custoBase, impostoPct, adsPct, transacaoPct){
     let lo = 0, hi = 5000;
     for(let i = 0; i < 60; i++){
       const mid = (lo + hi) / 2;
       const { comissaoPct, tarifaFixa } = taxaShopee2026(mid);
-      const lucro = mid - mid*(comissaoPct/100) - tarifaFixa - custoBase - mid*(impostoPct/100) - mid*(adsPct/100);
+      const lucro = mid - mid*(comissaoPct/100) - tarifaFixa - custoBase - mid*(impostoPct/100) - mid*(adsPct/100) - mid*(transacaoPct/100);
       const margemCalc = mid > 0 ? (lucro/mid)*100 : -999;
       if(margemCalc < margemAlvoPct){ lo = mid; } else { hi = mid; }
     }
@@ -528,31 +539,33 @@
     const outros = parseFloat(document.getElementById('sim-outros').value) || 0;
     const impostoPct = parseFloat(document.getElementById('sim-imposto').value) || 0;
     const adsPct = parseFloat(document.getElementById('sim-ads').value) || 0;
+    const transacaoPct = parseFloat(document.getElementById('sim-transacao').value) || 0;
 
     const custoBase = custo + embalagem + outros;
     const margensAlvo = [5, 10, 15, 20, 25, 30, 35, 40, 50];
 
     let html = `
       <div style="background:rgba(111,224,138,0.06); border:1px solid var(--accent-dim); border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:12.5px; color:var(--muted);">
-        🛍️ <b style="color:var(--text);">Shopee</b> — Preço de venda calculado a partir do seu custo (R$ ${custoBase.toFixed(2).replace('.',',')}) + comissão por faixa + imposto + ADS, para cada margem
+        🛍️ <b style="color:var(--text);">Shopee</b> — Preço de venda calculado a partir do seu custo (R$ ${custoBase.toFixed(2).replace('.',',')}) + comissão por faixa + taxa de transação + imposto + ADS, para cada margem
       </div>
       <table>
         <thead><tr>
-          <th>Margem alvo</th><th>Preço venda</th><th>Comissão</th><th>Tarifa fixa</th><th>Imposto</th><th>ADS</th><th>Custo total</th><th>Lucro</th><th>Margem real</th><th>Avaliação</th>
+          <th>Margem alvo</th><th>Preço venda</th><th>Comissão</th><th>Tarifa fixa</th><th>Transação</th><th>Imposto</th><th>ADS</th><th>Custo total</th><th>Lucro</th><th>Margem real</th><th>Avaliação</th>
         </tr></thead>
         <tbody>`;
 
     margensAlvo.forEach(margemAlvo => {
       if(custoBase <= 0){
-        html += `<tr><td colspan="10" class="empty-state">Preencha o custo do produto para gerar a tabela.</td></tr>`;
+        html += `<tr><td colspan="11" class="empty-state">Preencha o custo do produto para gerar a tabela.</td></tr>`;
         return;
       }
-      const preco = precoParaMargem(margemAlvo, custoBase, impostoPct, adsPct);
+      const preco = precoParaMargem(margemAlvo, custoBase, impostoPct, adsPct, transacaoPct);
       const { comissaoPct, tarifaFixa } = taxaShopee2026(preco);
       const valorComissao = preco * (comissaoPct/100);
       const valorImposto = preco * (impostoPct/100);
       const valorAds = preco * (adsPct/100);
-      const custoTotal = custoBase + valorComissao + tarifaFixa + valorImposto + valorAds;
+      const valorTransacao = preco * (transacaoPct/100);
+      const custoTotal = custoBase + valorComissao + tarifaFixa + valorImposto + valorAds + valorTransacao;
       const lucro = preco - custoTotal;
       const margemReal = (lucro/preco) * 100;
       const aval = avaliarMargem(margemReal);
@@ -566,6 +579,7 @@
         <td><b>${formatarMoeda(preco)}</b></td>
         <td style="color:var(--danger);">- ${formatarMoeda(valorComissao)} <span style="color:var(--muted); font-size:11px;">(${comissaoPct}%)</span></td>
         <td style="color:var(--danger);">- ${formatarMoeda(tarifaFixa)}</td>
+        <td style="color:var(--danger);">${transacaoPct > 0 ? '- ' + formatarMoeda(valorTransacao) : '—'}</td>
         <td style="color:var(--muted);">${impostoPct > 0 ? '- ' + formatarMoeda(valorImposto) : '—'}</td>
         <td style="color:var(--muted);">${adsPct > 0 ? '- ' + formatarMoeda(valorAds) : '—'}</td>
         <td>${formatarMoeda(custoTotal)}</td>
@@ -674,6 +688,7 @@
     document.getElementById('sim-outros').value = p.outros_custos || 0;
     document.getElementById('sim-imposto').value = p.imposto_pct || 0;
     document.getElementById('sim-ads').value = p.ads_pct || 0;
+    document.getElementById('sim-transacao').value = p.transacao_pct ?? 2;
     document.getElementById('sim-preco-manual').value = p.preco_sugerido || '';
 
     calcularTabelaShopee();
