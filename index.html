@@ -474,6 +474,7 @@
     ultimoCalculo = {
       nome_produto: document.getElementById('sim-produto').value.trim() || 'Produto sem nome',
       custo, frete: 0,
+      embalagem, outros_custos: outros, ads_pct: adsPct,
       taxa_plataforma_pct: comissaoPct,
       imposto_pct: impostoPct,
       margem_desejada_pct: round2(margemPct),
@@ -606,37 +607,60 @@
   }
 
   // ===================== HISTÓRICO =====================
+  let historicoData = [];
+
   async function carregarHistorico(){
     const container = document.getElementById('historico-container');
     container.innerHTML = '<div class="empty-state">Carregando...</div>';
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('precificacoes')
       .select('*')
       .order('criado_em', { ascending: false })
       .limit(20);
 
     if(error){
-      container.innerHTML = '<div class="empty-state">Erro ao carregar histórico.</div>';
+      console.error('Erro ao carregar histórico:', error);
+      container.innerHTML = '<div class="empty-state">Erro ao carregar histórico: ' + escapeHtml(error.message) + '</div>';
       return;
     }
 
-    if(!data || data.length === 0){
+    historicoData = data || [];
+
+    if(historicoData.length === 0){
       container.innerHTML = '<div class="empty-state">Nenhuma precificação salva ainda.</div>';
       return;
     }
 
-    let html = '<table><thead><tr><th>Produto</th><th>Preço</th><th>Lucro</th><th>Plataforma</th></tr></thead><tbody>';
-    data.forEach(p => {
-      html += `<tr>
+    let html = '<table><thead><tr><th>Produto</th><th>Preço</th><th>Lucro</th><th>Margem</th></tr></thead><tbody>';
+    historicoData.forEach((p, i) => {
+      html += `<tr style="cursor:pointer;" onclick="carregarItemHistorico(${i})" title="Clique para reabrir no simulador">
         <td>${escapeHtml(p.nome_produto)}</td>
         <td class="pos">${formatarMoeda(p.preco_sugerido)}</td>
         <td>${formatarMoeda(p.lucro_liquido)}</td>
-        <td style="color:var(--muted); font-size:11.5px;">${escapeHtml(p.plataforma)}</td>
+        <td style="color:var(--muted); font-size:11.5px;">${p.margem_desejada_pct}%</td>
       </tr>`;
     });
     html += '</tbody></table>';
     container.innerHTML = html;
+  }
+
+  function carregarItemHistorico(i){
+    const p = historicoData[i];
+    if(!p) return;
+
+    document.getElementById('sim-produto').value = p.nome_produto || '';
+    document.getElementById('sim-custo').value = p.custo || 0;
+    document.getElementById('sim-embalagem').value = p.embalagem || 0;
+    document.getElementById('sim-outros').value = p.outros_custos || 0;
+    document.getElementById('sim-imposto').value = p.imposto_pct || 0;
+    document.getElementById('sim-ads').value = p.ads_pct || 0;
+    document.getElementById('sim-preco-manual').value = p.preco_sugerido || '';
+
+    calcularTabelaShopee();
+
+    // rola até o simulador para o usuário ver que carregou
+    document.querySelector('.panel-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function escapeHtml(str){
