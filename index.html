@@ -158,16 +158,127 @@
   }
   .chip-margem:hover{ border-color:var(--accent); }
   .chip-margem.active{ background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
+
+  /* ---------- AUTH HERO (novo) ---------- */
+  #auth-screen{
+    max-width: 980px;
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    background: var(--panel);
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+  }
+  .auth-visual{
+    flex: 1.1;
+    position: relative;
+    background:
+      radial-gradient(circle at 25% 25%, rgba(111,224,138,0.18), transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(111,224,138,0.10), transparent 50%),
+      linear-gradient(160deg, #0B100C 0%, #131A14 100%);
+    padding: 40px;
+    display:flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    min-height: 560px;
+  }
+  .auth-visual::before{
+    content:'';
+    position:absolute; inset:-40%;
+    background: radial-gradient(circle, rgba(111,224,138,0.07) 0%, transparent 60%);
+    animation: pulseGlow 8s ease-in-out infinite;
+  }
+  @keyframes pulseGlow{
+    0%, 100% { transform: scale(0.9) translate(0,0); opacity:0.6; }
+    50% { transform: scale(1.15) translate(3%, -3%); opacity:1; }
+  }
+  .float-icon{
+    position:absolute;
+    background: var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius: 14px;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 26px;
+    box-shadow: 0 12px 30px -8px rgba(0,0,0,0.5);
+    animation: floatIcon 6s ease-in-out infinite;
+  }
+  .float-icon.f1{ width:64px; height:64px; top:8%; left:12%; animation-delay: 0s; }
+  .float-icon.f2{ width:52px; height:52px; top:18%; left:62%; animation-delay: 1.2s; font-size:22px;}
+  .float-icon.f3{ width:58px; height:58px; top:48%; left:8%; animation-delay: 2.4s; }
+  .float-icon.f4{ width:70px; height:70px; top:42%; left:68%; animation-delay: 0.6s; }
+  .float-icon.f5{ width:48px; height:48px; top:68%; left:38%; animation-delay: 1.8s; font-size:20px;}
+  .float-icon.f6{ width:56px; height:56px; top:5%; left:42%; animation-delay: 3s; }
+  @keyframes floatIcon{
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-16px) rotate(4deg); }
+  }
+  .auth-visual-content{ position:relative; z-index:2; }
+  .auth-visual-title{
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+  .auth-visual-title span{ color: var(--accent); }
+  .auth-visual-sub{
+    color: var(--muted);
+    font-size: 13.5px;
+    max-width: 320px;
+    line-height: 1.6;
+  }
+  .auth-stats{
+    position:relative; z-index:2;
+    display:flex; gap:20px;
+  }
+  .auth-stat{ }
+  .auth-stat .num{ font-family: var(--serif); font-size:22px; color:var(--accent); font-weight:600; }
+  .auth-stat .label{ font-size:11px; color:var(--muted); font-family:var(--mono); }
+
+  .auth-form-side{
+    flex: 1;
+    padding: 48px 44px;
+    display:flex; flex-direction:column; justify-content:center;
+  }
+  .auth-form-side .logo{ font-size:30px; }
+  @media (max-width: 760px){
+    .auth-visual{ display:none; }
+    .auth-form-side{ padding: 36px 26px; }
+  }
 </style>
 </head>
 <body>
 
 <!-- ===================== TELA DE LOGIN/CADASTRO ===================== -->
 <div id="auth-screen">
+
+  <div class="auth-visual">
+    <div class="float-icon f1">🛒</div>
+    <div class="float-icon f2">🏷️</div>
+    <div class="float-icon f3">📈</div>
+    <div class="float-icon f4">🛍️</div>
+    <div class="float-icon f5">💰</div>
+    <div class="float-icon f6">📦</div>
+
+    <div class="auth-visual-content">
+      <div class="auth-visual-title">Precifique com <span>confiança</span><br>em qualquer marketplace.</div>
+      <div class="auth-visual-sub">Calcule comissões, taxas e margem real antes de publicar — sem surpresa no extrato.</div>
+    </div>
+
+    <div class="auth-stats">
+      <div class="auth-stat"><div class="num">+20%</div><div class="label">MARGEM MÉDIA GANHA</div></div>
+      <div class="auth-stat"><div class="num">2026</div><div class="label">TAXAS ATUALIZADAS</div></div>
+    </div>
+  </div>
+
+  <div class="auth-form-side">
   <div class="logo">Lucra<span>Shop</span></div>
   <div class="tagline">// controle de vendas e precificação</div>
 
-  <div class="card">
+  <div class="card" style="background:transparent; border:none; padding:0;">
     <div class="tabs">
       <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Entrar</button>
       <button class="tab-btn" id="tab-signup" onclick="switchTab('signup')">Criar conta</button>
@@ -202,6 +313,7 @@
     </div>
 
     <div id="auth-msg"></div>
+  </div>
   </div>
 </div>
 
