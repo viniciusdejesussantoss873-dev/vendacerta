@@ -143,6 +143,21 @@
   .empty-state{ color:var(--muted); font-size:13px; text-align:center; padding:30px 0; }
 
   .small-note{ font-size:11.5px; color:var(--muted); margin-top:10px; font-family:var(--mono); }
+
+  .campos-linha{
+    display:grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap:12px;
+  }
+  @media (max-width: 900px){ .campos-linha{ grid-template-columns: repeat(2, 1fr); } }
+
+  .chip-margem{
+    background: var(--bg); border:1px solid var(--panel-border); color:var(--text);
+    padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600;
+    cursor:pointer; font-family:var(--sans); transition: all .15s;
+  }
+  .chip-margem:hover{ border-color:var(--accent); }
+  .chip-margem.active{ background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
 </style>
 </head>
 <body>
@@ -202,96 +217,85 @@
 
   <div class="grid">
     <!-- SIMULADOR -->
-    <div class="card">
-      <div class="panel-title">Dados do Produto</div>
-      <div class="panel-sub">Os valores recalculam automaticamente</div>
+    <div class="card" style="grid-column: 1 / -1;">
+      <div class="panel-title">Simulador de Precificação — Shopee</div>
+      <div class="panel-sub">A tabela abaixo recalcula automaticamente</div>
 
-      <div class="field">
-        <label>Nome do produto</label>
-        <input type="text" id="sim-produto" placeholder="" oninput="recalc()">
-      </div>
-
-      <div class="field">
-        <label>Marketplace</label>
-        <input type="text" value="Shopee (faixas 2026)" disabled style="opacity:0.6;">
-      </div>
-
-      <div class="field">
-        <label>Preço de Venda (R$)</label>
-        <input type="number" id="sim-preco" placeholder="0,00" step="0.01" oninput="recalc()">
-      </div>
-
-      <div class="row2">
+      <div class="campos-linha">
+        <div class="field">
+          <label>Nome do Produto</label>
+          <input type="text" id="sim-produto" placeholder="" oninput="calcularTabelaShopee()">
+        </div>
         <div class="field">
           <label>Custo do Produto (R$)</label>
-          <input type="number" id="sim-custo" placeholder="0,00" step="0.01" oninput="recalc()">
+          <input type="number" id="sim-custo" placeholder="0,00" step="0.01" oninput="calcularTabelaShopee()">
         </div>
         <div class="field">
-          <label>Custo de Frete (R$)</label>
-          <input type="number" id="sim-frete" placeholder="0,00" step="0.01" oninput="recalc()">
-        </div>
-      </div>
-
-      <div class="row2">
-        <div class="field">
-          <label>Embalagem (R$)</label>
-          <input type="number" id="sim-embalagem" placeholder="0,00" step="0.01" oninput="recalc()">
+          <label>Custo Embalagem (R$)</label>
+          <input type="number" id="sim-embalagem" placeholder="0,00" step="0.01" oninput="calcularTabelaShopee()">
         </div>
         <div class="field">
-          <label>ADS (%)</label>
-          <input type="number" id="sim-ads" placeholder="Ex: 5" step="0.1" oninput="recalc()">
+          <label>Outros Custos (R$)</label>
+          <input type="number" id="sim-outros" placeholder="0,00" step="0.01" oninput="calcularTabelaShopee()">
         </div>
-      </div>
-
-      <div class="row2">
         <div class="field">
           <label>Imposto (%)</label>
-          <input type="number" id="sim-imposto" placeholder="Ex: 6" step="0.1" oninput="recalc()">
+          <input type="number" id="sim-imposto" placeholder="0" step="0.1" oninput="calcularTabelaShopee()">
         </div>
         <div class="field">
-          <label>Outros custos (R$)</label>
-          <input type="number" id="sim-outros" placeholder="0,00" step="0.01" oninput="recalc()">
+          <label>ADS / Marketing (%)</label>
+          <input type="number" id="sim-ads" placeholder="0" step="0.1" oninput="calcularTabelaShopee()">
         </div>
       </div>
-    </div>
 
-    <!-- RESULTADO -->
-    <div class="card">
-      <div class="panel-title">Resultado da Simulação</div>
-      <div class="panel-sub">Lucro líquido por unidade vendida</div>
-
-      <div class="result-box">
-        <div class="result-row"><span>Preço de venda</span><b id="r-preco">R$ 0,00</b></div>
-        <div class="result-row"><span>(-) Comissão <span id="r-com-label" style="color:var(--muted); font-size:11px;">(0%)</span></span><b id="r-comissao" style="color:var(--danger);">- R$ 0,00</b></div>
-        <div class="result-row" id="row-tarifa-fixa"><span>(-) Tarifa fixa</span><b id="r-tarifa-fixa" style="color:var(--danger);">- R$ 0,00</b></div>
-        <div class="result-row"><span>(-) Custo produto</span><b id="r-custo" style="color:var(--danger);">- R$ 0,00</b></div>
-        <div class="result-row"><span>(-) Frete</span><b id="r-frete" style="color:var(--danger);">- R$ 0,00</b></div>
-        <div class="result-row"><span>(-) Embalagem</span><b id="r-embal" style="color:var(--danger);">- R$ 0,00</b></div>
-        <div class="result-row" id="row-ads"><span>(-) ADS</span><b id="r-ads" style="color:var(--danger);">- R$ 0,00</b></div>
-        <div class="result-row" id="row-imposto"><span>(-) Imposto</span><b id="r-imposto" style="color:var(--danger);">- R$ 0,00</b></div>
-        <div class="result-row" id="row-outros"><span>(-) Outros custos</span><b id="r-outros" style="color:var(--danger);">- R$ 0,00</b></div>
+      <div style="margin-top:6px;">
+        <label style="display:block; margin-bottom:8px;">Margem líquida desejada:</label>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <button class="chip-margem" data-margem="15" onclick="filtrarMargem(15)">15%</button>
+          <button class="chip-margem" data-margem="20" onclick="filtrarMargem(20)">20%</button>
+          <button class="chip-margem" data-margem="25" onclick="filtrarMargem(25)">25%</button>
+          <button class="chip-margem" data-margem="30" onclick="filtrarMargem(30)">30%</button>
+          <button class="chip-margem" data-margem="35" onclick="filtrarMargem(35)">35%</button>
+          <span class="small-note" id="margem-status" style="margin:0;">Mostrando todas as faixas</span>
+        </div>
       </div>
 
-      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--panel-border);">
-        <div class="result-main-label">LUCRO LÍQUIDO</div>
-        <div class="result-main" id="r-lucro">R$ 0,00</div>
-        <div class="result-row"><span>Margem sobre o preço</span><b id="r-margem">0%</b></div>
+      <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--panel-border); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <span style="font-size:13px; color:var(--muted);">💰 Simular preço manual:</span>
+        <span style="color:var(--muted); font-size:13px;">R$</span>
+        <input type="number" id="sim-preco-manual" placeholder="Ex: 199,90" step="0.01" oninput="calcularTabelaShopee()" style="max-width:140px; margin-bottom:0;">
+        <button onclick="limparPrecoManual()" style="background:transparent; border:1px solid var(--panel-border); color:var(--muted); padding:10px 14px; border-radius:8px; cursor:pointer; font-family:var(--sans); font-size:13px;">✕ Limpar</button>
+        <span class="small-note" style="margin:0;">Calcule o resultado exato para um preço específico</span>
       </div>
 
-      <button class="primary" style="margin-top:14px; background:var(--accent-dim); color:var(--accent);" onclick="salvarPrecificacao()" id="save-btn">Salvar no histórico</button>
+      <div id="manual-resultado" class="hidden" style="margin-top:14px;">
+        <div class="result-box">
+          <div class="result-row"><span>Preço de venda</span><b id="m-preco">R$ 0,00</b></div>
+          <div class="result-row"><span>(-) Comissão <span id="m-com-label" style="color:var(--muted); font-size:11px;"></span></span><b id="m-comissao" style="color:var(--danger);">- R$ 0,00</b></div>
+          <div class="result-row"><span>(-) Tarifa fixa</span><b id="m-tarifa" style="color:var(--danger);">- R$ 0,00</b></div>
+          <div class="result-row"><span>(-) Custo + Embalagem + Outros</span><b id="m-custos" style="color:var(--danger);">- R$ 0,00</b></div>
+          <div class="result-row" id="m-row-imposto"><span>(-) Imposto</span><b id="m-imposto" style="color:var(--danger);">- R$ 0,00</b></div>
+          <div class="result-row" id="m-row-ads"><span>(-) ADS</span><b id="m-ads" style="color:var(--danger);">- R$ 0,00</b></div>
+        </div>
+        <div style="margin-top:14px;">
+          <div class="result-main-label">LUCRO LÍQUIDO</div>
+          <div class="result-main" id="m-lucro">R$ 0,00</div>
+          <div class="result-row"><span>Margem</span><b id="m-margem">0%</b></div>
+        </div>
+        <button class="primary" style="margin-top:14px; background:var(--accent-dim); color:var(--accent);" onclick="salvarPrecificacao()" id="save-btn">Salvar no histórico</button>
+      </div>
     </div>
 
     <!-- TABELA SHOPEE 2026 -->
     <div class="card" style="grid-column: 1 / -1;">
       <div class="panel-title">Tabela de faixas — Shopee 2026</div>
-      <div class="panel-sub">Comissão por faixa de preço (regra vigente desde março/2026, sem teto de comissão) · usa o custo, frete, imposto e ADS preenchidos acima</div>
-      <button class="primary" style="max-width:280px;" onclick="calcularTabelaShopee()">Gerar tabela de faixas</button>
+      <div class="panel-sub">Comissão por faixa de preço (regra vigente desde março/2026, sem teto de comissão)</div>
       <div id="tabela-shopee-container" style="margin-top:16px; overflow-x:auto;"></div>
       <div class="small-note">Faixas: até R$8 → 50% do valor · R$8 a R$79,99 → 20% + R$4 · R$80 a R$99,99 → 14% + R$16 · R$100 a R$199,99 → 14% + R$20 · acima de R$200 → 14% + R$26. Vendedor CPF com mais de 450 pedidos/90 dias paga +R$3 por item (ajuste manualmente se for o seu caso).</div>
     </div>
 
     <!-- HISTÓRICO -->
-    <div class="card">
+    <div class="card" style="grid-column: 1 / -1;">
 
       <div class="panel-title">Histórico de precificações</div>
       <div class="panel-sub">Últimos cálculos salvos</div>
@@ -389,6 +393,7 @@
     document.getElementById('user-nome').textContent = nome;
 
     carregarHistorico();
+    calcularTabelaShopee();
   }
 
   // checa se já tem sessão ativa ao abrir a página
@@ -401,61 +406,74 @@
   checarSessao();
 
   // ===================== SIMULADOR (formato FinStack, só Shopee) =====================
-  function recalc(){
-    const preco = parseFloat(document.getElementById('sim-preco').value) || 0;
+  let margemAtiva = null;
+
+  function round2(n){ return Math.round(n*100)/100; }
+  function formatarMoeda(n){ return 'R$ ' + n.toFixed(2).replace('.', ','); }
+
+  function filtrarMargem(margem){
+    margemAtiva = (margemAtiva === margem) ? null : margem;
+    document.querySelectorAll('.chip-margem').forEach(btn => {
+      btn.classList.toggle('active', parseInt(btn.dataset.margem) === margemAtiva);
+    });
+    document.getElementById('margem-status').textContent = margemAtiva
+      ? `Destacando faixas com margem ≥ ${margemAtiva}%`
+      : 'Mostrando todas as faixas';
+    calcularTabelaShopee();
+  }
+
+  function limparPrecoManual(){
+    document.getElementById('sim-preco-manual').value = '';
+    document.getElementById('manual-resultado').classList.add('hidden');
+  }
+
+  function calcularManual(){
+    const precoInput = document.getElementById('sim-preco-manual').value;
+    if(!precoInput){ document.getElementById('manual-resultado').classList.add('hidden'); return; }
+
+    const preco = parseFloat(precoInput) || 0;
     const custo = parseFloat(document.getElementById('sim-custo').value) || 0;
-    const frete = parseFloat(document.getElementById('sim-frete').value) || 0;
     const embalagem = parseFloat(document.getElementById('sim-embalagem').value) || 0;
-    const adsPct = parseFloat(document.getElementById('sim-ads').value) || 0;
-    const impostoPct = parseFloat(document.getElementById('sim-imposto').value) || 0;
     const outros = parseFloat(document.getElementById('sim-outros').value) || 0;
+    const impostoPct = parseFloat(document.getElementById('sim-imposto').value) || 0;
+    const adsPct = parseFloat(document.getElementById('sim-ads').value) || 0;
 
     const { comissaoPct, tarifaFixa } = taxaShopee2026(preco);
-    const label = `(${comissaoPct}% + ${formatarMoeda(tarifaFixa)})`;
-
     const valorComissao = preco * (comissaoPct/100);
-    const valorAds = preco * (adsPct/100);
     const valorImposto = preco * (impostoPct/100);
+    const valorAds = preco * (adsPct/100);
+    const custosBase = custo + embalagem + outros;
 
-    const lucro = preco - valorComissao - tarifaFixa - custo - frete - embalagem - valorAds - valorImposto - outros;
+    const lucro = preco - valorComissao - tarifaFixa - custosBase - valorImposto - valorAds;
     const margemPct = preco > 0 ? (lucro/preco)*100 : 0;
 
-    document.getElementById('r-preco').textContent = formatarMoeda(preco);
-    document.getElementById('r-comissao').textContent = '- ' + formatarMoeda(valorComissao);
-    document.getElementById('r-com-label').textContent = label;
-    document.getElementById('r-custo').textContent = '- ' + formatarMoeda(custo);
-    document.getElementById('r-frete').textContent = '- ' + formatarMoeda(frete);
-    document.getElementById('r-embal').textContent = '- ' + formatarMoeda(embalagem);
+    document.getElementById('m-preco').textContent = formatarMoeda(preco);
+    document.getElementById('m-com-label').textContent = `(${comissaoPct}%)`;
+    document.getElementById('m-comissao').textContent = '- ' + formatarMoeda(valorComissao);
+    document.getElementById('m-tarifa').textContent = '- ' + formatarMoeda(tarifaFixa);
+    document.getElementById('m-custos').textContent = '- ' + formatarMoeda(custosBase);
 
-    const rowTarifa = document.getElementById('row-tarifa-fixa');
-    if(tarifaFixa > 0){
-      rowTarifa.style.display = '';
-      document.getElementById('r-tarifa-fixa').textContent = '- ' + formatarMoeda(tarifaFixa);
-    } else { rowTarifa.style.display = 'none'; }
+    const rowImp = document.getElementById('m-row-imposto');
+    if(impostoPct > 0){ rowImp.style.display=''; document.getElementById('m-imposto').textContent = '- ' + formatarMoeda(valorImposto); }
+    else { rowImp.style.display = 'none'; }
 
-    const rowAds = document.getElementById('row-ads');
-    if(adsPct > 0){ rowAds.style.display = ''; document.getElementById('r-ads').textContent = '- ' + formatarMoeda(valorAds); }
+    const rowAds = document.getElementById('m-row-ads');
+    if(adsPct > 0){ rowAds.style.display=''; document.getElementById('m-ads').textContent = '- ' + formatarMoeda(valorAds); }
     else { rowAds.style.display = 'none'; }
 
-    const rowImposto = document.getElementById('row-imposto');
-    if(impostoPct > 0){ rowImposto.style.display = ''; document.getElementById('r-imposto').textContent = '- ' + formatarMoeda(valorImposto); }
-    else { rowImposto.style.display = 'none'; }
+    const mLucro = document.getElementById('m-lucro');
+    mLucro.textContent = formatarMoeda(lucro);
+    mLucro.style.color = lucro >= 0 ? 'var(--accent)' : 'var(--danger)';
 
-    const rowOutros = document.getElementById('row-outros');
-    if(outros > 0){ rowOutros.style.display = ''; document.getElementById('r-outros').textContent = '- ' + formatarMoeda(outros); }
-    else { rowOutros.style.display = 'none'; }
+    const mMargem = document.getElementById('m-margem');
+    mMargem.textContent = margemPct.toFixed(1) + '%';
+    mMargem.style.color = margemPct >= 0 ? 'var(--accent)' : 'var(--danger)';
 
-    const rLucro = document.getElementById('r-lucro');
-    rLucro.textContent = formatarMoeda(lucro);
-    rLucro.style.color = lucro >= 0 ? 'var(--accent)' : 'var(--danger)';
-
-    const rMargem = document.getElementById('r-margem');
-    rMargem.textContent = margemPct.toFixed(1) + '%';
-    rMargem.style.color = margemPct >= 0 ? 'var(--accent)' : 'var(--danger)';
+    document.getElementById('manual-resultado').classList.remove('hidden');
 
     ultimoCalculo = {
       nome_produto: document.getElementById('sim-produto').value.trim() || 'Produto sem nome',
-      custo, frete,
+      custo, frete: 0,
       taxa_plataforma_pct: comissaoPct,
       imposto_pct: impostoPct,
       margem_desejada_pct: round2(margemPct),
@@ -464,9 +482,6 @@
       plataforma: 'shopee'
     };
   }
-
-  function round2(n){ return Math.round(n*100)/100; }
-  function formatarMoeda(n){ return 'R$ ' + n.toFixed(2).replace('.', ','); }
 
   // ===================== TABELA SHOPEE 2026 =====================
   function taxaShopee2026(preco){
@@ -494,24 +509,27 @@
 
   function calcularTabelaShopee(){
     const custo = parseFloat(document.getElementById('sim-custo').value) || 0;
-    const frete = parseFloat(document.getElementById('sim-frete').value) || 0;
+    const embalagem = parseFloat(document.getElementById('sim-embalagem').value) || 0;
+    const outros = parseFloat(document.getElementById('sim-outros').value) || 0;
     const impostoPct = parseFloat(document.getElementById('sim-imposto').value) || 0;
     const adsPct = parseFloat(document.getElementById('sim-ads').value) || 0;
 
     const faixasPreco = [19.90, 29.90, 39.90, 49.90, 59.90, 69.90, 79.90, 89.90, 99.90, 149.90, 199.90, 299.90];
-    const custoBase = custo + frete;
+    const custoBase = custo + embalagem + outros;
 
     let html = `
       <div style="background:rgba(111,224,138,0.06); border:1px solid var(--accent-dim); border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:12.5px; color:var(--muted);">
-        🛍️ <b style="color:var(--text);">Shopee</b> — Comissão por faixa + tarifa fixa por item · ADS ${adsPct}% · Imposto ${impostoPct}%
+        🛍️ <b style="color:var(--text);">Shopee</b> — Comissão 20% (14%+6% frete grátis) + tarifa fixa por item
       </div>
       <table>
         <thead><tr>
-          <th>Preço venda</th><th>Comissão</th><th>Tarifa fixa</th><th>Imposto</th><th>ADS</th><th>Custo total</th><th>Lucro</th><th>Margem</th><th>Avaliação</th>
+          <th>Faixa</th><th>Preço venda</th><th>Comissão</th><th>Tarifa fixa</th><th>Imposto</th><th>ADS</th><th>Custo total</th><th>Lucro</th><th>Margem</th><th>Avaliação</th>
         </tr></thead>
         <tbody>`;
 
-    faixasPreco.forEach(preco => {
+    const nomesFaixa = ['Entrada','Faixa 2','Faixa 3','Faixa 4','Faixa 5','Médio','Faixa 7','Faixa 8','Faixa 9','Faixa 10','Faixa 11','Máximo'];
+
+    faixasPreco.forEach((preco, i) => {
       const { comissaoPct, tarifaFixa } = taxaShopee2026(preco);
       const valorComissao = preco * (comissaoPct/100);
       const valorImposto = preco * (impostoPct/100);
@@ -520,8 +538,13 @@
       const lucro = preco - custoTotal;
       const margemPct = (lucro/preco) * 100;
       const aval = avaliarMargem(margemPct);
+      const atingeMargem = margemAtiva ? margemPct >= margemAtiva : true;
+      const rowStyle = margemAtiva
+        ? (atingeMargem ? 'background:rgba(111,224,138,0.08);' : 'opacity:0.35;')
+        : '';
 
-      html += `<tr>
+      html += `<tr style="${rowStyle}">
+        <td style="color:var(--muted); font-size:11.5px;">${nomesFaixa[i]}</td>
         <td><b>${formatarMoeda(preco)}</b></td>
         <td style="color:var(--danger);">- ${formatarMoeda(valorComissao)} <span style="color:var(--muted); font-size:11px;">(${comissaoPct}%)</span></td>
         <td style="color:var(--danger);">- ${formatarMoeda(tarifaFixa)}</td>
@@ -536,6 +559,8 @@
 
     html += '</tbody></table>';
     document.getElementById('tabela-shopee-container').innerHTML = html;
+
+    calcularManual();
   }
 
   async function salvarPrecificacao(){
