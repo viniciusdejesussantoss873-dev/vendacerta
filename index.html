@@ -261,6 +261,7 @@
           <button class="chip-margem" data-margem="30" onclick="filtrarMargem(30)">30%</button>
           <button class="chip-margem" data-margem="35" onclick="filtrarMargem(35)">35%</button>
           <span class="small-note" id="margem-status" style="margin:0;">Mostrando todas as margens</span>
+          <button id="btn-salvar-margem" onclick="salvarDaMargem()" style="margin-left:auto; background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent-dim); padding:8px 16px; border-radius:8px; cursor:pointer; font-family:var(--sans); font-size:13px; font-weight:600;">💾 Salvar no histórico</button>
         </div>
       </div>
 
@@ -430,6 +431,69 @@
   function limparPrecoManual(){
     document.getElementById('sim-preco-manual').value = '';
     document.getElementById('manual-resultado').classList.add('hidden');
+  }
+
+  async function salvarDaMargem(){
+    const custo = parseFloat(document.getElementById('sim-custo').value) || 0;
+    const embalagem = parseFloat(document.getElementById('sim-embalagem').value) || 0;
+    const outros = parseFloat(document.getElementById('sim-outros').value) || 0;
+    const impostoPct = parseFloat(document.getElementById('sim-imposto').value) || 0;
+    const adsPct = parseFloat(document.getElementById('sim-ads').value) || 0;
+    const transacaoPct = parseFloat(document.getElementById('sim-transacao').value) || 0;
+    const custoBase = custo + embalagem + outros;
+
+    if(custoBase <= 0){
+      alert('Preencha o custo do produto antes de salvar.');
+      return;
+    }
+
+    const margemAlvo = margemAtiva || 20;
+    const preco = precoParaMargem(margemAlvo, custoBase, impostoPct, adsPct, transacaoPct);
+    const { comissaoPct, tarifaFixa } = taxaShopee2026(preco);
+    const valorComissao = preco * (comissaoPct/100);
+    const valorImposto = preco * (impostoPct/100);
+    const valorAds = preco * (adsPct/100);
+    const valorTransacao = preco * (transacaoPct/100);
+    const custoTotal = custoBase + valorComissao + tarifaFixa + valorImposto + valorAds + valorTransacao;
+    const lucro = preco - custoTotal;
+    const margemReal = (lucro/preco) * 100;
+
+    ultimoCalculo = {
+      nome_produto: document.getElementById('sim-produto').value.trim() || 'Produto sem nome',
+      custo, frete: 0,
+      embalagem, outros_custos: outros, ads_pct: adsPct, transacao_pct: transacaoPct,
+      taxa_plataforma_pct: comissaoPct,
+      imposto_pct: impostoPct,
+      margem_desejada_pct: round2(margemReal),
+      preco_sugerido: round2(preco),
+      lucro_liquido: round2(lucro),
+      plataforma: 'shopee'
+    };
+
+    if(!currentUser){
+      alert('Sessão expirada. Faça login de novo antes de salvar.');
+      return;
+    }
+
+    const btn = document.getElementById('btn-salvar-margem');
+    btn.disabled = true;
+
+    const { error } = await supabaseClient.from('precificacoes').insert({
+      ...ultimoCalculo,
+      criado_por: currentUser.id
+    });
+
+    btn.disabled = false;
+
+    if(error){
+      console.error('Erro ao salvar precificação:', error);
+      alert('Erro ao salvar: ' + error.message);
+      return;
+    }
+
+    carregarHistorico();
+    btn.textContent = '✓ Salvo!';
+    setTimeout(()=>{ btn.textContent = '💾 Salvar no histórico'; }, 1800);
   }
 
   function calcularManual(){
