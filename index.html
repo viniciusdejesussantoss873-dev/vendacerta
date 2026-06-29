@@ -632,17 +632,36 @@
       return;
     }
 
-    let html = '<table><thead><tr><th>Produto</th><th>Preço</th><th>Lucro</th><th>Margem</th></tr></thead><tbody>';
+    let html = '<table><thead><tr><th>Produto</th><th>Preço</th><th>Lucro</th><th>Margem</th><th></th></tr></thead><tbody>';
     historicoData.forEach((p, i) => {
-      html += `<tr style="cursor:pointer;" onclick="carregarItemHistorico(${i})" title="Clique para reabrir no simulador">
-        <td>${escapeHtml(p.nome_produto)}</td>
-        <td class="pos">${formatarMoeda(p.preco_sugerido)}</td>
-        <td>${formatarMoeda(p.lucro_liquido)}</td>
-        <td style="color:var(--muted); font-size:11.5px;">${p.margem_desejada_pct}%</td>
+      html += `<tr>
+        <td style="cursor:pointer;" onclick="carregarItemHistorico(${i})" title="Clique para reabrir no simulador">${escapeHtml(p.nome_produto)}</td>
+        <td class="pos" style="cursor:pointer;" onclick="carregarItemHistorico(${i})">${formatarMoeda(p.preco_sugerido)}</td>
+        <td style="cursor:pointer;" onclick="carregarItemHistorico(${i})">${formatarMoeda(p.lucro_liquido)}</td>
+        <td style="color:var(--muted); font-size:11.5px; cursor:pointer;" onclick="carregarItemHistorico(${i})">${p.margem_desejada_pct}%</td>
+        <td style="text-align:right;">
+          <button onclick="event.stopPropagation(); excluirHistorico(${i})" title="Excluir"
+            style="background:transparent; border:1px solid var(--panel-border); color:var(--muted); width:28px; height:28px; border-radius:6px; cursor:pointer; font-size:13px;"
+            onmouseover="this.style.borderColor='var(--danger)'; this.style.color='var(--danger)';"
+            onmouseout="this.style.borderColor='var(--panel-border)'; this.style.color='var(--muted)';">✕</button>
+        </td>
       </tr>`;
     });
     html += '</tbody></table>';
     container.innerHTML = html;
+  }
+
+  async function excluirHistorico(i){
+    const item = historicoData[i];
+    if(!item) return;
+    if(!confirm(`Excluir "${item.nome_produto}" do histórico?`)) return;
+
+    const { error } = await supabaseClient.from('precificacoes').delete().eq('id', item.id);
+    if(error){
+      alert('Erro ao excluir: ' + error.message);
+      return;
+    }
+    carregarHistorico();
   }
 
   function carregarItemHistorico(i){
