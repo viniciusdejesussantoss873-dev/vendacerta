@@ -213,17 +213,7 @@
 
       <div class="field">
         <label>Marketplace</label>
-        <select id="sim-plataforma" onchange="recalc()">
-          <option value="shopee">Shopee (faixas 2026)</option>
-          <option value="mercado_livre">Mercado Livre (13%)</option>
-          <option value="amazon">Amazon (15%)</option>
-          <option value="outro">Outro (taxa manual)</option>
-        </select>
-      </div>
-
-      <div class="field" id="campo-taxa-manual" style="display:none;">
-        <label>Taxa da plataforma (%)</label>
-        <input type="number" id="sim-taxa" placeholder="Ex: 14" step="0.1" oninput="recalc()">
+        <input type="text" value="Shopee (faixas 2026)" disabled style="opacity:0.6;">
       </div>
 
       <div class="field">
@@ -410,26 +400,8 @@
   }
   checarSessao();
 
-  // ===================== SIMULADOR (formato FinStack) =====================
-  function comissaoPorMarketplace(plataforma, preco, taxaManualPct){
-    if(plataforma === 'shopee'){
-      const { comissaoPct, tarifaFixa } = taxaShopee2026(preco);
-      return { comissaoPct, tarifaFixa, label: `(${comissaoPct}% + ${formatarMoeda(tarifaFixa)})` };
-    }
-    if(plataforma === 'mercado_livre'){
-      return { comissaoPct: 13, tarifaFixa: 0, label: '(13%)' };
-    }
-    if(plataforma === 'amazon'){
-      return { comissaoPct: 15, tarifaFixa: 0, label: '(15%)' };
-    }
-    // outro — taxa manual
-    return { comissaoPct: taxaManualPct, tarifaFixa: 0, label: `(${taxaManualPct}%)` };
-  }
-
+  // ===================== SIMULADOR (formato FinStack, só Shopee) =====================
   function recalc(){
-    const plataforma = document.getElementById('sim-plataforma').value;
-    document.getElementById('campo-taxa-manual').style.display = (plataforma === 'outro') ? 'block' : 'none';
-
     const preco = parseFloat(document.getElementById('sim-preco').value) || 0;
     const custo = parseFloat(document.getElementById('sim-custo').value) || 0;
     const frete = parseFloat(document.getElementById('sim-frete').value) || 0;
@@ -437,9 +409,9 @@
     const adsPct = parseFloat(document.getElementById('sim-ads').value) || 0;
     const impostoPct = parseFloat(document.getElementById('sim-imposto').value) || 0;
     const outros = parseFloat(document.getElementById('sim-outros').value) || 0;
-    const taxaManualPct = parseFloat(document.getElementById('sim-taxa').value) || 0;
 
-    const { comissaoPct, tarifaFixa, label } = comissaoPorMarketplace(plataforma, preco, taxaManualPct);
+    const { comissaoPct, tarifaFixa } = taxaShopee2026(preco);
+    const label = `(${comissaoPct}% + ${formatarMoeda(tarifaFixa)})`;
 
     const valorComissao = preco * (comissaoPct/100);
     const valorAds = preco * (adsPct/100);
@@ -489,7 +461,7 @@
       margem_desejada_pct: round2(margemPct),
       preco_sugerido: round2(preco),
       lucro_liquido: round2(lucro),
-      plataforma: plataforma
+      plataforma: 'shopee'
     };
   }
 
